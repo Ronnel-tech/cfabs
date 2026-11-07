@@ -8,7 +8,7 @@ try {
     query($db, 'INSERT INTO departments (department_code, department_name) VALUES (?, ?)', [$prefix, 'Report fixtures']);
     $department = (int) $db->lastInsertId();
     $roles = query($db, 'SELECT role_name, id FROM roles')->fetchAll(PDO::FETCH_KEY_PAIR);
-    foreach (['a' => 'faculty_employee', 'b' => 'faculty_employee', 'admin' => 'system_admin', 'coordinator' => 'booking_admin'] as $name => $role) {
+    foreach (['a' => 'faculty_employee', 'b' => 'faculty_employee', 'admin' => 'system_admin', 'coordinator' => 'booking_admin', 'custodian' => 'asset_custodian'] as $name => $role) {
         query($db, 'INSERT INTO users (username, email, password, role, is_active, role_id, department_id) VALUES (?, ?, ?, ?, 1, ?, ?)',
             [$prefix . '.' . $name, $prefix . '.' . $name . '@example.invalid', password_hash($password, PASSWORD_DEFAULT), 'user', $roles[$role], $department]);
         $users[$name] = (int) $db->lastInsertId();
@@ -24,9 +24,26 @@ try {
             [$prefix . '.' . $name, $users[$name], $department, $facility, 'Report test', 'Fixture']);
         $bookings[$name] = (int) $db->lastInsertId();
     }
+    query($db, "INSERT INTO facility_bookings (booking_reference, requester_id, department_id, facility_id, start_datetime, end_datetime, activity_name, purpose, participants_count, status)
+        VALUES (?, ?, ?, ?, UTC_TIMESTAMP() + INTERVAL 2 DAY, UTC_TIMESTAMP() + INTERVAL 2 DAY + INTERVAL 1 HOUR, ?, ?, 2, 'PENDING')",
+        [$prefix . '.future', $users['a'], $department, $facility, 'Future report test', 'Fixture']);
     expect_status(request_api('GET', '/api/dashboard'), 401, 'anonymous dashboard blocked');
     $own = expect_status(request_api('GET', '/api/dashboard', null, $tokens['a']), 200, 'own dashboard')['data'];
     check($own['facility_bookings']['APPROVED'] === 1, 'dashboard excludes another requester');
+    check($own['scope'] === 'personal' && $own['facility_bookings']['PENDING'] === 1 && $own['catalog_totals'] === null, 'personal dashboard includes upcoming bookings without admin totals');
+    $staff = expect_status(request_api('GET', '/api/dashboard', null, $tokens['coordinator']), 200, 'facility staff dashboard')['data'];
+    check($staff['scope'] === 'facility' && $staff['facility_bookings']['APPROVED'] >= 2 && $staff['asset_bookings'] === [] && $staff['overdue_assets'] === [], 'facility dashboard aggregates requests without asset data');
+    $custody = expect_status(request_api('GET', '/api/dashboard', null, $tokens['custodian']), 200, 'custodian dashboard')['data'];
+    check($custody['scope'] === 'asset' && $custody['facility_bookings'] === [] && $custody['catalog_totals'] === null, 'custodian dashboard excludes facilities and administration totals');
+    $admin_dashboard = expect_status(request_api('GET', '/api/dashboard', null, $tokens['admin']), 200, 'administrator dashboard')['data'];
+    check($admin_dashboard['scope'] === 'administration' && $admin_dashboard['catalog_totals']['users'] >= 5, 'admin dashboard includes management totals');
+    foreach (['admin','coordinator','custodian'] as $name) {
+        $profile = expect_status(request_api('GET', '/api/auth/me', null, $tokens[$name]), 200, 'staff profile')['data'];
+        check(!in_array('facility_booking.create', $profile['permissions'], TRUE) && !in_array('asset_booking.create', $profile['permissions'], TRUE), 'staff effective grants exclude booking creation');
+        foreach (['facility-bookings','asset-bookings','facility-booking-series','asset-booking-series'] as $path) {
+            expect_status(request_api('POST', '/api/' . $path, [], $tokens[$name]), 403, $name . ' cannot submit ' . $path);
+        }
+    }
     expect_status(request_api('GET', '/api/dashboard?owner_id=' . $users['b'], null, $tokens['a']), 422, 'owner filter cannot widen dashboard');
     expect_status(request_api('GET', '/api/reports/facilities', null, $tokens['a']), 403, 'faculty operational report blocked');
     expect_status(request_api('GET', '/api/reports/assets', null, $tokens['coordinator']), 403, 'facility coordinator cannot read asset reports');

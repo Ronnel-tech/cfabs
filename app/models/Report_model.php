@@ -12,6 +12,15 @@ class Report_model extends Model {
         $this->connection = $lava->db;
     }
 
+    public function dashboard_catalog(array $permissions): array
+    {
+        $totals = [];
+        foreach (['users' => 'user.manage', 'departments' => 'department.manage', 'facilities' => 'facility.view', 'assets' => 'asset.view'] as $table => $permission) {
+            if (in_array($permission, $permissions, TRUE)) $totals[$table] = (int) $this->connection->raw("SELECT COUNT(*) FROM {$table}")->fetchColumn();
+        }
+        return $totals;
+    }
+
     public function bookings(string $kind, string $start, string $end, ?int $owner = null, array $filters = []): array
     {
         $schema = lava_instance()->Booking_model->schema($kind);

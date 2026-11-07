@@ -106,10 +106,12 @@ Google, Render CORS and `MAIL_APP_URL`, then redeploy as needed.
    SPA routing. Frontend login after a full reload is expected: tokens remain
    memory-only by design.
 
-Earlier checks of the replaced `cfabs` service: Vercel root returned HTTP 200, but Render's
-`/healthz.php` and `/api/auth/me` returned HTTP 404. That earlier Render deployment
-therefore does not yet serve this application/configuration. Local changes do
-not update either provider until its source is redeployed.
+The replacement `cfabs-1` deployment passed the live smoke script: Vercel root
+HTTP 200, PHP health HTTP 200, CORS preflight HTTP 204, and unauthenticated API
+HTTP 401 with the exact frontend CORS origin. The deployed frontend API chunk
+uses `https://cfabs-1.onrender.com`; `/asset-problems` also loads directly.
+See [live-verification.md](live-verification.md) for demo-account checks and
+remaining acceptance work. Future local changes still require redeployment.
 
 ## Remaining operations
 
@@ -123,7 +125,8 @@ still needs a fresh private Resend key, sender setup and delivery verification.
 Local checks: 21 backend deployment checks, 113 frontend tests, Vercel production
 build, lint, PHP syntax and startup shell syntax pass. Docker is unavailable on
 this machine, so the image has not been built/run here. The first Render build
-and the live smoke script remain required before declaring deployment complete.
+was followed by successful live smoke verification. Interactive acceptance and
+the remaining operations above are still required before real campus use.
 
 References: [Render Docker](https://render.com/docs/docker),
 [Render Blueprint fields](https://render.com/docs/blueprint-spec),
@@ -132,4 +135,4 @@ References: [Render Docker](https://render.com/docs/docker),
 
 Environment settings were saved on Render service `cfabs-1` and Vercel Production.
 Existing database and signing secrets were preserved. Mail remains disabled.
-These saved changes require a new deployment; the replacement service still needs live smoke verification.
+The deployed replacement service now passes live smoke verification.

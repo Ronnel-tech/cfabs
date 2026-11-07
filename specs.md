@@ -2615,6 +2615,16 @@ scheduling/deployment remain deferred. See `docs/email-notifications.md` for set
 supported events, retry limits, privacy rules and verification commands.
 # Deployment configuration decision (2026-11-07)
 
+Role-policy update (2026-11-07): system administrators, booking administrators,
+and asset custodians cannot create facility or asset bookings, including
+recurring requests. Staff may view schedules and availability for operations;
+requester accounts with the appropriate creation grants submit bookings.
+Migration 013 removes the old staff creation grants, and effective permission
+checks also exclude them. Dashboards show personal requests for requesters,
+facility activity for booking administrators, asset custody for custodians,
+and authorized management totals for system administrators. Default dashboard
+dates include the past 30 days and next 31 days, so upcoming bookings appear.
+
 The user selected Render for the LavaLust backend, Vercel for the separate React
 frontend, and retention of the current hosted MySQL database. Configured origins
 are `https://cfabs-1.onrender.com` and `https://cfabs-frontend.vercel.app`.

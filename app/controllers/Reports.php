@@ -34,11 +34,21 @@ class Reports extends Controller {
         $this->respond(function () use ($actor) {
             $query = $this->api->get_query_params();
             if (array_diff(array_keys($query), ['start','end'])) throw new DomainException('Unsupported dashboard filter.', 422);
-            [$start, $end] = $this->range($query);
+            [$start, $end] = $query ? $this->range($query)
+                : [gmdate('Y-m-d H:i:s', time() - 30 * 86400), gmdate('Y-m-d H:i:s', time() + 31 * 86400)];
+            $admin = ($actor['role_name'] ?? null) === 'system_admin';
+            $facility = in_array('facility_booking.view_all', $actor['permissions'], TRUE)
+                || ($admin && in_array('report.facility.view', $actor['permissions'], TRUE));
+            $asset = in_array('asset_booking.view_all', $actor['permissions'], TRUE)
+                || ($admin && in_array('report.asset.view', $actor['permissions'], TRUE));
+            $staff = $admin || in_array($actor['role_name'] ?? '', ['booking_admin','asset_custodian'], TRUE) || $facility || $asset;
+            $owner = $staff ? null : (int) $actor['id'];
             return ['start_utc' => $start, 'end_utc' => $end,
-                'facility_bookings' => $this->counts($this->Report_model->bookings('facility', $start, $end, (int) $actor['id'])),
-                'asset_bookings' => $this->counts($this->Report_model->bookings('asset', $start, $end, (int) $actor['id'])),
-                'overdue_assets' => $this->Report_model->overdue((int) $actor['id'])];
+                'scope' => $admin ? 'administration' : ($facility && $asset ? 'operations' : ($facility ? 'facility' : ($asset ? 'asset' : ($staff ? 'staff' : 'personal')))),
+                'catalog_totals' => $admin ? $this->Report_model->dashboard_catalog($actor['permissions']) : null,
+                'facility_bookings' => (object) ($facility || !$staff ? $this->counts($this->Report_model->bookings('facility', $start, $end, $owner)) : []),
+                'asset_bookings' => (object) ($asset || !$staff ? $this->counts($this->Report_model->bookings('asset', $start, $end, $owner)) : []),
+                'overdue_assets' => $asset || !$staff ? $this->Report_model->overdue($owner) : []];
         });
     }
 

@@ -29,8 +29,12 @@ class Account_model extends Model {
     public function permissions(int $user_id): array
     {
         return $this->connection->raw('SELECT p.permission_key FROM users u
+            JOIN roles r ON r.id = u.role_id
             JOIN role_permissions rp ON rp.role_id = u.role_id JOIN permissions p ON p.id = rp.permission_id
-            WHERE u.id = ? AND u.is_active = 1 ORDER BY p.permission_key', [$user_id])->fetchAll(PDO::FETCH_COLUMN);
+            WHERE u.id = ? AND u.is_active = 1
+            AND NOT (r.role_name IN (\'system_admin\',\'booking_admin\',\'asset_custodian\')
+                AND p.permission_key IN (\'facility_booking.create\',\'asset_booking.create\'))
+            ORDER BY p.permission_key', [$user_id])->fetchAll(PDO::FETCH_COLUMN);
     }
 
     public function public_profile(array $user): array
