@@ -2613,3 +2613,10 @@ sent during implementation. Test-domain use is limited by Resend to the account'
 own address; institution-wide delivery requires sender verification. Production
 scheduling/deployment remain deferred. See `docs/email-notifications.md` for setup,
 supported events, retry limits, privacy rules and verification commands.
+# Deployment configuration decision (2026-11-07)
+
+The user selected Render for the LavaLust backend, Vercel for the separate React
+frontend, and retention of the current hosted MySQL database. Configured origins
+are `https://cfabs-1.onrender.com` and `https://cfabs-frontend.vercel.app`.
+See `docs/deployment.md`. Configuration is prepared locally; live redeployment,
+environment setup, operational scheduling and smoke verification remain required.

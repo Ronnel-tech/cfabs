@@ -1,0 +1,16 @@
+.git
+.env
+.env.*
+**/.env
+**/.env.*
+vendor
+app/vendor
+runtime
+tests
+docs
+node_modules
+*.log
+*.pem
+*.key
+client_secret*.json
+specs.md

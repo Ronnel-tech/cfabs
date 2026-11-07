@@ -1,0 +1,49 @@
+services:
+  - type: web
+    name: cfabs-1
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz.php
+    autoDeployTrigger: off
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_URL
+        value: https://cfabs-1.onrender.com
+      - key: APP_KEY
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: REFRESH_TOKEN_KEY
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://cfabs-frontend.vercel.app
+      - key: DB_DRIVER
+        value: mysql
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "3306"
+      - key: DB_NAME
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_CHARSET
+        value: utf8mb4
+      - key: DB_PREFIX
+        value: ""
+      - key: TRUST_PROXY
+        value: "1"
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: MAIL_APP_URL
+        value: https://cfabs-frontend.vercel.app
+      - key: MAIL_PROVIDER
+        value: resend
+      - key: MAIL_ENABLED
+        value: "0"

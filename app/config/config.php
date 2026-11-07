@@ -88,7 +88,7 @@ $config['date_default_timezone'] = 'Asia/Manila';
 | WARNING: You MUST set this value!
 |
 */
-$config['base_url'] 				= '';
+$config['base_url'] = getenv('APP_URL') ?: '';
 
 /*
 |--------------------------------------------------------------------------
@@ -388,7 +388,7 @@ $config['security_headers'] = [
     // ── Transport ──
     'hsts_max_age'    => 31536000,
     'hsts_subdomains' => true,
-    'trust_proxy'     => false,
+    'trust_proxy'     => getenv('TRUST_PROXY') === '1',
 
     // ── Browser features ──
     'permissions_policy' => 'geolocation=(), microphone=(), camera=(), payment=(), usb=(), '
@@ -397,9 +397,9 @@ $config['security_headers'] = [
     'coop'               => 'same-origin',
 
     // ── API ──
-    'api_max_body' => 1048576,
+    'api_max_body' => 3145728,
     'cors' => [
-        'allowed_origins' => [],
+        'allowed_origins' => array_values(array_filter(array_map('trim', explode(',', getenv('CORS_ALLOWED_ORIGINS') ?: '')))),
         'credentials'     => false,
         'methods'         => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
         'headers'         => 'Authorization, Content-Type, X-Requested-With',
