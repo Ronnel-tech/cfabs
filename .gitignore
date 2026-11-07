@@ -8,7 +8,6 @@
 # Dependencies
 vendor/
 app/vendor/
-composer.lock
 
 # Cache & Logs
 runtime/*
