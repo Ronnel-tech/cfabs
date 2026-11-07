@@ -64,3 +64,22 @@ checks cover distinct facility/custodian/requester dashboards, absent staff
 request forms and My requests links, preserved requester booking forms, and
 responsive custody dashboard layout without horizontal overflow. Disposable
 report-test users were removed; staff booking creation grants total zero.
+
+Navigation was subsequently specialized by workflow. Requesters see Book a
+facility, Borrow assets, My requests, and Availability calendar. Facility staff
+see Facility requests, Manage facilities, Facility maintenance, and Facility
+reports. Custodians see Asset requests & handovers, Manage assets, Scan for
+handover, Asset repair work, and Asset maintenance/reports. Administrators get
+separate account, role, department, facility, asset, report/export, and audit
+links when their current permissions allow them. Staff no longer have the
+requester resource browser or calendar in their sidebar. Existing read-only
+schedule endpoints remain available for operational context. Dashboard actions
+use the corresponding workflow labels and management destinations. Resource
+management headings and form buttons now name their entity, such as Manage
+facilities, Add facility, and Save facility. All 120 frontend tests, production
+build, and lint pass. Browser checks confirmed the facility management link
+opens the facility catalog, its form uses Add facility/Save facility, and the
+custodian menu contains handover/inventory/repair actions. The mobile menu
+opens correctly without horizontal overflow. No resource records were changed
+during these navigation checks. Frontend redeployment is required for these UI
+changes.
