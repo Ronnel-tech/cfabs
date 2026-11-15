@@ -13,9 +13,9 @@ class Scheduled_mail extends Controller {
         $this->call->library(['reminder_service','mail_service']);
         try {
             $this->reminder_service->dispatch(TRUE,24,null);
-            $this->mail_service->dispatch('send',25,null);
+            $counts=$this->mail_service->dispatch('send',25,null);
             header('Content-Type: application/json');
-            echo '{"ok":true}';
+            echo json_encode(['ok'=>true,'mail'=>$counts],JSON_THROW_ON_ERROR);
         } catch (Throwable $error) {
             error_log('CFABS scheduled email dispatch failed.');
             http_response_code(503);
