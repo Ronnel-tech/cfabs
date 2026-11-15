@@ -1,0 +1,23 @@
+name: Dispatch CFABS email
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch due reminders and email
+        env:
+          MAIL_DISPATCH_TOKEN: ${{ secrets.MAIL_DISPATCH_TOKEN }}
+        run: |
+          if [ -z "$MAIL_DISPATCH_TOKEN" ]; then
+            echo 'MAIL_DISPATCH_TOKEN is not configured' >&2
+            exit 1
+          fi
+          curl --fail --silent --show-error --max-time 90 --retry 2 \
+            --request POST \
+            --header "X-CFABS-Dispatch-Token: $MAIL_DISPATCH_TOKEN" \
+            --url https://cfabs-1.onrender.com/api/internal/scheduled-mail

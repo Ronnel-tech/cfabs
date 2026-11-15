@@ -86,6 +86,7 @@ $router->get('/api/permissions', 'Accounts::permissions');
 $router->get('admin-bootstrap', 'Admin_bootstrap::create');
 $router->get('reminder-dispatch', 'Reminder_dispatch::run');
 $router->get('email-dispatch', 'Mail_dispatch::run');
+$router->post('/api/internal/scheduled-mail', 'Scheduled_mail::run');
 $router->get('/api/facilities', 'Catalog::facilities');
 $router->get('/api/assets', 'Catalog::assets');
 $router->get('/api/departments', 'Catalog::departments');

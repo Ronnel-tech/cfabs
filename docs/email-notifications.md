@@ -37,10 +37,12 @@ reset requests and notification deliveries. Request discovery is batch bounded.
 `--queue` and `--send` are mutually exclusive. The underlying HTTP worker route
 returns 404. No background scheduler is assumed or installed.
 
-For automatic operation, explicitly configure a scheduler later to run the
-existing `notifications:dispatch --send` reminder command followed by
-`email:dispatch --send`, typically once per minute. Run previews first. This is
-not a deployment configuration change performed by this phase.
+Production uses `.github/workflows/dispatch-mail.yml` every five minutes. Its
+`MAIL_DISPATCH_TOKEN` repository secret must match the Render service's
+`MAIL_DISPATCH_TOKEN` environment variable. The workflow calls the protected
+`POST /api/internal/scheduled-mail` route, which prepares reminders and sends
+due email. Requests without the token return 404. The GitHub Actions workflow
+can also be started manually from the Actions tab for testing.
 
 Email discovery reads committed notifications after business transactions finish.
 Provider failures cannot roll back bookings or handovers. A database worker lock

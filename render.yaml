@@ -47,3 +47,5 @@ services:
         value: brevo
       - key: MAIL_ENABLED
         value: "0"
+      - key: MAIL_DISPATCH_TOKEN
+        sync: false
