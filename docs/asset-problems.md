@@ -55,9 +55,9 @@ same notes can be recovered without duplicate resolution events.
 
 Submission notifies the reporter and eligible administrators. Assignment and work
 updates notify the reporter and current custodian. In-app notices and the existing
-Resend outbox support submitted, assigned, started, progress, rejected, resolved
+Brevo outbox support submitted, assigned, started, progress, rejected, resolved
 and work-cancelled events. Emails contain only reference/current status/timestamp;
-descriptions, staff notes, photos and resolution text are excluded. Live Resend
+descriptions, staff notes, photos and resolution text are excluded. Live Brevo
 sending remains disabled until separately configured.
 
 ## Private photos

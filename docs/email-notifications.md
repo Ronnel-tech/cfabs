@@ -1,39 +1,17 @@
-# Email notifications and password recovery
-
-Resend is the selected provider. Delivery is **disabled until configured**. No
-live provider sends were performed during implementation. A sender domain is not
-yet verified; the supplied chat credential must be revoked and replaced privately.
-Never put provider credentials in the frontend, repository, command arguments or chat.
+Brevo is the selected provider. Delivery stays disabled until an API key is configured and tested. The verified sender in the current Brevo account is CFABS <ronnellogdat@gmail.com>; Brevo warns that a freemail domain is not recommended for deliverability. Use an authenticated campus domain before broad production sending. Keep credentials in the backend's ignored `.env`, never in the frontend or repository.
 
 ## Configuration
 
-Set these values in the backend's ignored `.env` (keep the existing strong `APP_KEY`):
-
 ```dotenv
-MAIL_PROVIDER=resend
+MAIL_PROVIDER=brevo
 MAIL_ENABLED=0
 MAIL_API_KEY=
-MAIL_FROM_ADDRESS=
+MAIL_FROM_ADDRESS=ronnellogdat@gmail.com
 MAIL_FROM_NAME=CFABS
 MAIL_APP_URL=http://127.0.0.1:5173
 ```
 
-Use a Resend sending key and a sender on your verified domain, then set
-`MAIL_ENABLED=1` when ready to send. The frontend URL must be trusted HTTPS;
-HTTP is allowed only for localhost development. A localhost link works only on
-the development computer. Production domains/deployment remain deferred.
-
-Without a verified domain, Resend restricts testing to the Resend account's own
-email address. Follow its [testing-domain guidance](https://resend.com/docs/api-reference/errors)
-and [sender setup](https://resend.com/docs/dashboard/domains/introduction).
-Do not enable campus-wide delivery using the test sender. We have not configured
-or contacted Resend with the exposed key.
-
-The application uses the documented [Resend HTTPS API](https://resend.com/docs/api-reference/emails/send-email)
-through a focused LavaLust application library, with no new PHP dependency. The
-installed framework Email library uses PHP `mail()` and cannot implement this API
-transport. TLS peer/hostname verification stay enabled; supported Windows builds
-use the native CA store, as in Google verification.
+The backend submits to Brevo's HTTPS transactional email API using its `api-key` header. Create an API key in Brevo under SMTP & API → API keys & MCP, place it privately in `.env`, and set `MAIL_ENABLED=1` only when ready to send. The local frontend URL works only on the development computer; production requires a trusted HTTPS frontend URL. TLS peer and hostname checks remain enabled.
 
 ## Schema and dispatch
 
@@ -71,12 +49,12 @@ payloads use the framework's authenticated AES-256-GCM encryption and existing
 `APP_KEY`. Retain that key while jobs are pending. Sender, recipient and content
 are frozen once queued; later configuration changes do not rewrite pending mail.
 
-Resend acceptance is recorded as `accepted`, **not confirmed inbox delivery**.
+Brevo acceptance is recorded as `accepted`, **not confirmed inbox delivery**.
 Terminal deliveries purge their encrypted content. Errors record safe codes only,
 never provider bodies, credentials or reset links. Transient failures use bounded
 backoff; permanent errors stop. Retries/crash recovery reuse the same payload and
-provider key, with at most five attempts and a 23-hour retry window inside
-[Resend's 24-hour idempotency period](https://resend.com/docs/dashboard/emails/idempotency-keys).
+provider key, with at most five attempts and a 25-minute retry window inside
+[Brevo's 30-minute idempotency period](https://developers.brevo.com/docs/heterogenous-versions-batch-emails).
 Unattempted notification mail expires after 24 hours. Terminal/ambiguous jobs are
 not automatically resent with new keys. No webhook/bounce-delivery claim is made.
 
@@ -164,5 +142,5 @@ maintenance permission, or current custodian assignment with that permission.
 Old assignees cannot receive queued private-report email after reassignment.
 Emails include only report reference, current status and recorded time; issue
 text, staff notes, resolution text and photos stay inside the authorized app.
-This uses the same disabled-by-default Resend configuration and fake-provider
+This uses the same disabled-by-default Brevo configuration and fake-provider
 tests; no live email was sent during implementation.

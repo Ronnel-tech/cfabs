@@ -41,8 +41,8 @@ $mail_test_lava->properties['call']=new Mail_test_loader($mail_test_lava);
 function lava_instance() { global $mail_test_lava; return $mail_test_lava; }
 function config_item($name) { global $environment; return $name==='encryption_key'?$environment['APP_KEY']:null; }
 $mail_test_lava->call->library('mail_service');
-$mail_test_lava->call->library('resend_transport');
-class Mail_test_transport extends Resend_transport {
+$mail_test_lava->call->library('brevo_transport');
+class Mail_test_transport extends Brevo_transport {
     public array $calls=[];
     public string $outcome='accepted';
     public function send(array $payload,string $key): array

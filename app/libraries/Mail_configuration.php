@@ -27,7 +27,7 @@ class Mail_configuration {
     }
     public function validate(bool $sending = FALSE): void
     {
-        if ((getenv('MAIL_PROVIDER') ?: 'resend') !== 'resend') throw new RuntimeException('MAIL_PROVIDER must be resend.');
+        if ((getenv('MAIL_PROVIDER') ?: 'brevo') !== 'brevo') throw new RuntimeException('MAIL_PROVIDER must be brevo.');
         $this->sender(); $this->app_url();
         if (strlen((string) config_item('encryption_key')) < 32) throw new RuntimeException('A strong APP_KEY is required for email.');
         if ($sending) {

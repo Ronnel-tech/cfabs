@@ -61,7 +61,7 @@ class Mail_service {
         return ['from'=>$this->lava->mail_configuration->sender(),'to'=>[$user['email']]]
             +$this->lava->mail_template->render($event,$name,$context['fields'],$url);
     }
-    public function dispatch(string $mode,int $limit,?int $recipient=null,?Resend_transport $transport=null): array
+    public function dispatch(string $mode,int $limit,?int $recipient=null,?Brevo_transport $transport=null): array
     {
         if (!in_array($mode,['preview','queue','send'],TRUE) || $limit<1 || $limit>100) throw new DomainException('Choose preview, queue or send with a limit of 1–100.');
         if ($mode!=='preview') { $this->lava->mail_configuration->validate($mode==='send'); $this->lava->call->library('mail_cipher'); }
@@ -86,10 +86,10 @@ class Mail_service {
             }
             $due=$model->due($limit,$recipient); $counts['ready']=count($due);
             if ($mode!=='send') return $counts;
-            if ($transport===null) { $this->lava->call->library('resend_transport'); $transport=$this->lava->resend_transport; }
+            if ($transport===null) { $this->lava->call->library('brevo_transport'); $transport=$this->lava->brevo_transport; }
             foreach($due as $row) {
                 $first=$row['first_attempt_at']===null?time():strtotime($row['first_attempt_at'].' UTC');
-                if ((int)$row['attempts']>=5 || $first<=time()-23*3600) {
+                if ((int)$row['attempts']>=5 || $first<=time()-25*60) {
                     $model->finish((int)$row['id'],'failed','retry_window_exhausted'); $counts['failed']++; continue;
                 }
                 $reason=$this->delivery_ineligible($row);
@@ -99,13 +99,13 @@ class Mail_service {
                 $user=$this->lava->Account_model->by_id((int)$row['recipient_id']);
                 if (!$user || ($payload['to'][0]??null)!==$user['email']) { $model->finish((int)$row['id'],'skipped','recipient_changed'); $counts['skipped']++; continue; }
                 // Persist intent before network I/O. Crashes retry the same
-                // encrypted payload and provider key inside Resend's 24h window.
+                // encrypted payload and provider key inside Brevo's 24h window.
                 $model->begin_attempt((int)$row['id']);
                 try { $result=$transport->send($payload,$row['delivery_key']); }
                 catch (Throwable $error) { $result=['accepted'=>FALSE,'retryable'=>TRUE,'code'=>'transport_error','retry_after'=>0]; }
                 if ($result['accepted']) { $model->finish((int)$row['id'],'accepted',null,$result['provider_id']); $counts['accepted']++; continue; }
-                $delay=max([60,300,1800,7200,14400][min(4,(int)$row['attempts'])],(int)($result['retry_after']??0));
-                $retry=$result['retryable'] && (int)$row['attempts']<4 && time()+$delay<$first+23*3600;
+                $delay=max([60,300,600,600,600][min(4,(int)$row['attempts'])],(int)($result['retry_after']??0));
+                $retry=$result['retryable'] && (int)$row['attempts']<4 && time()+$delay<$first+25*60;
                 $state=$retry?'retry':'failed';
                 $model->finish((int)$row['id'],$state,$result['code'],null,$delay); $counts[$state]++;
                 error_log('CFABS email delivery '.(int)$row['id'].': '.$result['code']);

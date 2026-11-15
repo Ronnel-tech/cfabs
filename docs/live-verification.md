@@ -33,7 +33,7 @@ the normal authentication records; test sessions were logged out.
 3. Verify real Google sign-in/linking and phone camera QR scanning.
 4. Verify administrator PDF/Excel downloads and private problem-report photos
    through an authorized administrator session.
-5. Configure a verified Resend sender, fresh private API key, scheduled reminder
+5. Configure a verified Brevo sender, fresh private API key, scheduled reminder
    and outbox dispatch, then verify delivery before enabling real email.
 6. Complete mobile acceptance, verify database backup/recovery arrangements,
    and deactivate demo accounts/resources before real use.

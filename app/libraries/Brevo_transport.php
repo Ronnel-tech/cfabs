@@ -1,16 +1,21 @@
 <?php
 defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
 
-class Resend_transport {
+class Brevo_transport {
     public function send(array $payload, string $key): array
     {
         $config=new Mail_configuration(); $config->validate(TRUE);
         $body=''; $retry_after=0;
-        $curl=curl_init('https://api.resend.com/emails');
+        $sender=$payload['from']??'';
+        if (!preg_match('/^(.+) <([^<>]+)>$/D',$sender,$parts)) throw new RuntimeException('Invalid configured sender.');
+        $request=['sender'=>['name'=>$parts[1],'email'=>$parts[2]],'to'=>array_map(fn($email)=>['email'=>$email],$payload['to']),
+            'subject'=>$payload['subject'],'htmlContent'=>$payload['html'],'textContent'=>$payload['text'],
+            'headers'=>['IdempotencyKey'=>'cfabs-'.$key]];
+        $curl=curl_init('https://api.brevo.com/v3/smtp/email');
         if (PHP_OS_FAMILY==='Windows' && defined('CURLSSLOPT_NATIVE_CA')) curl_setopt($curl,CURLOPT_SSL_OPTIONS,CURLSSLOPT_NATIVE_CA);
         curl_setopt_array($curl,[
-            CURLOPT_POST=>TRUE,CURLOPT_POSTFIELDS=>json_encode($payload,JSON_THROW_ON_ERROR),
-            CURLOPT_HTTPHEADER=>['Content-Type: application/json','Authorization: Bearer '.getenv('MAIL_API_KEY'),'Idempotency-Key: cfabs-'.$key],
+            CURLOPT_POST=>TRUE,CURLOPT_POSTFIELDS=>json_encode($request,JSON_THROW_ON_ERROR),
+            CURLOPT_HTTPHEADER=>['Content-Type: application/json','api-key: '.getenv('MAIL_API_KEY')],
             CURLOPT_FOLLOWLOCATION=>FALSE,CURLOPT_CONNECTTIMEOUT=>4,CURLOPT_TIMEOUT=>10,
             CURLOPT_SSL_VERIFYPEER=>TRUE,CURLOPT_SSL_VERIFYHOST=>2,
             CURLOPT_HEADERFUNCTION=>function($handle,$line)use(&$retry_after){
@@ -25,12 +30,11 @@ class Resend_transport {
     public static function result(int $status,string $body,int $retry_after=0,int $errno=0): array
     {
         $data=json_decode($body,TRUE);
-        if ($status>=200 && $status<300 && is_string($data['id']??null) && preg_match('/^[a-zA-Z0-9_-]{1,80}$/D',$data['id'])) {
-            return ['accepted'=>TRUE,'provider_id'=>$data['id'],'retryable'=>FALSE,'code'=>null,'retry_after'=>0];
+        if ($status>=200 && $status<300 && is_string($data['messageId']??null) && strlen($data['messageId'])<=80 && preg_match('/^<[^<>\r\n]+>$/D',$data['messageId'])) {
+            return ['accepted'=>TRUE,'provider_id'=>$data['messageId'],'retryable'=>FALSE,'code'=>null,'retry_after'=>0];
         }
-        $category=$data['name']??'';
+        
         $retryable=$errno!==0 || $status===0 || $status===408 || $status===429 || $status>=500
-            || ($status===409 && in_array($category,['concurrent_idempotent_requests','resource_locked'],TRUE))
             || ($status>=200 && $status<300);
         // Never persist provider bodies, recipient addresses or request headers.
         $code=$errno!==0?'network_'.$errno:'provider_http_'.$status;

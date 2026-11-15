@@ -4,7 +4,7 @@ require __DIR__.'/support/mail_runtime.php';
 $lava=lava_instance(); $users=[]; $reset_requests=[];
 $vars=['MAIL_PROVIDER','MAIL_ENABLED','MAIL_API_KEY','MAIL_FROM_ADDRESS','MAIL_FROM_NAME','MAIL_APP_URL'];
 $before=[];foreach($vars as $var)$before[$var]=getenv($var);
-putenv('MAIL_PROVIDER=resend');putenv('MAIL_ENABLED=1');putenv('MAIL_API_KEY=test-no-network');putenv('MAIL_FROM_ADDRESS=campus@example.invalid');putenv('MAIL_FROM_NAME=CFABS');putenv('MAIL_APP_URL=http://127.0.0.1:5173');
+putenv('MAIL_PROVIDER=brevo');putenv('MAIL_ENABLED=1');putenv('MAIL_API_KEY=test-no-network');putenv('MAIL_FROM_ADDRESS=campus@example.invalid');putenv('MAIL_FROM_NAME=CFABS');putenv('MAIL_APP_URL=http://127.0.0.1:5173');
 $facility=null; $category=null;
 try {
     query($db,'INSERT INTO departments (department_code,department_name) VALUES (?,?)',[$prefix,'Mail test department']);
@@ -62,7 +62,7 @@ try {
     $transport->outcome='accepted';$lava->mail_service->dispatch('send',25,$users['owner'],$transport);
     check(end($transport->calls)===$first_call,'retry uses identical payload and provider idempotency key');
     $id=$notify();$lava->mail_service->dispatch('queue',25,$users['owner'],$transport);
-    query($db,"UPDATE email_deliveries SET status='sending',attempts=1,first_attempt_at=DATE_SUB(UTC_TIMESTAMP(),INTERVAL 24 HOUR) WHERE notification_id=?",[$id]);
+    query($db,"UPDATE email_deliveries SET status='sending',attempts=1,first_attempt_at=DATE_SUB(UTC_TIMESTAMP(),INTERVAL 26 MINUTE) WHERE notification_id=?",[$id]);
     $calls=count($transport->calls);$result=$lava->mail_service->dispatch('send',25,$users['owner'],$transport);
     check($result['failed']===1 && count($transport->calls)===$calls,'crash recovery never retries after provider deduplication window');
     $id=$notify();$lava->mail_service->dispatch('queue',25,$users['owner'],$transport);

@@ -44,6 +44,6 @@ services:
       - key: MAIL_APP_URL
         value: https://cfabs-frontend.vercel.app
       - key: MAIL_PROVIDER
-        value: resend
+        value: brevo
       - key: MAIL_ENABLED
         value: "0"

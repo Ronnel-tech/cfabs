@@ -1,7 +1,7 @@
 <?php
 class Dispatch_email {
     public static $command='email:dispatch';
-    public static $description='Preview email outbox; --queue stores mail, --send submits to configured Resend';
+    public static $description='Preview email outbox; --queue stores mail, --send submits to configured Brevo';
     public static $arguments=['--queue'=>'Queue without contacting provider','--send'=>'Queue and send (requires MAIL_ENABLED=1)','--limit=<n>'=>'1–100 records, default 25','--recipient=<id>'=>'Limit to one recipient'];
     public function handle($unused=null,array $flags=[],$extra=null)
     {

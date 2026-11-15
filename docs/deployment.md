@@ -53,7 +53,7 @@ Set these values in **Render → Environment**:
 | `DB_PREFIX` | Empty |
 | `GOOGLE_CLIENT_ID` | Existing public Web OAuth client ID |
 | `MAIL_APP_URL` | `https://cfabs-frontend.vercel.app` |
-| `MAIL_PROVIDER` | `resend` |
+| `MAIL_PROVIDER` | `brevo` |
 | `MAIL_ENABLED` | `0` until sender/key/live delivery are configured |
 
 Allow Render's outbound connections at the existing MySQL provider. This project
@@ -120,7 +120,7 @@ refresh tokens and email outbox live in MySQL. No disk or extra paid service was
 provisioned. No notification scheduler is deployed by this configuration. When
 ready, configure a scheduler to run `php lava notifications:dispatch --send` and
 then `php lava email:dispatch --send` with backend environment settings. Live mail
-still needs a fresh private Resend key, sender setup and delivery verification.
+still needs a fresh private Brevo key, sender setup and delivery verification.
 
 Local checks: 21 backend deployment checks, 113 frontend tests, Vercel production
 build, lint, PHP syntax and startup shell syntax pass. Docker is unavailable on
