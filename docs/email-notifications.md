@@ -37,12 +37,14 @@ reset requests and notification deliveries. Request discovery is batch bounded.
 `--queue` and `--send` are mutually exclusive. The underlying HTTP worker route
 returns 404. No background scheduler is assumed or installed.
 
-Production uses `.github/workflows/dispatch-mail.yml` every five minutes. Its
-`MAIL_DISPATCH_TOKEN` repository secret must match the Render service's
-`MAIL_DISPATCH_TOKEN` environment variable. The workflow calls the protected
-`POST /api/internal/scheduled-mail` route, which prepares reminders and sends
-due email. Requests without the token return 404. The GitHub Actions workflow
-can also be started manually from the Actions tab for testing.
+Production uses a cron-job.org job named `CFABS production email dispatch`
+every five minutes. It sends a POST request to
+`https://cfabs-1.onrender.com/api/internal/scheduled-mail` with the
+`X-CFABS-Dispatch-Token` header. Its token must match the Render service's
+`MAIL_DISPATCH_TOKEN` environment variable. The route prepares reminders and
+sends due email; requests without the token return 404. The job retains response
+history for troubleshooting. `.github/workflows/dispatch-mail.yml` is available
+for manual fallback from the GitHub Actions tab.
 
 Email discovery reads committed notifications after business transactions finish.
 Provider failures cannot roll back bookings or handovers. A database worker lock
