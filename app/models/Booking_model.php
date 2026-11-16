@@ -42,9 +42,11 @@ class Booking_model extends Model {
 
     public function bookings(string $kind, int $user, bool $all, int $limit, int $offset): array
     {
-        $table = $this->schema($kind)['table'];
-        $where = $all ? '' : ' WHERE requester_id = ?';
-        return $this->connection->raw("SELECT * FROM {$table}{$where} ORDER BY id DESC LIMIT {$limit} OFFSET {$offset}", $all ? [] : [$user])->fetchAll(PDO::FETCH_ASSOC);
+        $s = $this->schema($kind);
+        $where = $all ? '' : ' WHERE b.requester_id = ?';
+        return $this->connection->raw("SELECT b.*, r.{$kind}_name AS resource_name FROM {$s['table']} b
+            LEFT JOIN {$s['resource']} r ON r.id = b.{$s['key']}{$where}
+            ORDER BY b.id DESC LIMIT {$limit} OFFSET {$offset}", $all ? [] : [$user])->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function blocks(string $kind, int $id, string $start, string $end): array
