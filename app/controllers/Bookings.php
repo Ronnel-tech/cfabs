@@ -93,8 +93,12 @@ class Bookings extends Controller {
             [$limit, $offset] = $this->pagination();
             $mine = $this->api->get_query_params()['mine'] ?? '0';
             if (!in_array($mine, ['0', '1'], TRUE)) throw new DomainException('mine must be 0 or 1.', 422);
+            $status = $this->api->get_query_params()['status'] ?? null;
+            if ($status !== null && !in_array($status, ['PENDING', 'APPROVED', 'READY_FOR_RELEASE', 'RELEASED', 'RETURNED', 'COMPLETED', 'CANCELLED', 'REJECTED'], TRUE)) {
+                throw new DomainException('Invalid booking status.', 422);
+            }
             return $this->Booking_model->bookings($kind, (int) $actor['id'],
-                $mine !== '1' && in_array($kind . '_booking.view_all', $actor['permissions'], TRUE), $limit, $offset);
+                $mine !== '1' && in_array($kind . '_booking.view_all', $actor['permissions'], TRUE), $limit, $offset, $status);
         });
     }
 
