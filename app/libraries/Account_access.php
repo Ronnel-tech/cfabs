@@ -30,6 +30,8 @@ class Account_access {
         if ($permission !== null && !in_array($permission, $user['permissions'], TRUE)) {
             $this->lava->api->respond_error('Forbidden', 403);
         }
+        $this->lava->call->library('booking_service');
+        $this->lava->booking_service->reject_past_pending();
         return $user;
     }
 

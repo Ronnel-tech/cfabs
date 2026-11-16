@@ -115,6 +115,12 @@ class Booking_model extends Model {
         $this->connection->raw("UPDATE facility_bookings SET status = 'COMPLETED', completed_at = UTC_TIMESTAMP(), updated_at = UTC_TIMESTAMP() WHERE id = ?", [$id]);
     }
 
+    public function past_pending(string $kind, string $cutoff): array
+    {
+        $s = $this->schema($kind);
+        return $this->connection->raw("SELECT id FROM {$s['table']} WHERE status = 'PENDING' AND {$s['start']} < ? ORDER BY {$s['key']}, id", [$cutoff])->fetchAll(PDO::FETCH_COLUMN);
+    }
+
     public function overlapping_pending(string $kind, int $resource, string $start, string $end): array
     {
         $s = $this->schema($kind);

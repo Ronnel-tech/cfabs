@@ -56,6 +56,30 @@ try {
     $legacy_far = (int) $db->lastInsertId();
     expect_status(request_api('PATCH', '/api/facility-bookings/' . $legacy_far . '/approve', null, $tokens['coordinator']), 422, 'approval rechecks advance limit for old pending requests');
     check(query($db, 'SELECT status FROM facility_bookings WHERE id = ?', [$legacy_far])->fetchColumn() === 'PENDING', 'failed approval preserves pending record');
+    $midnight = (new DateTimeImmutable('today', new DateTimeZone('Asia/Manila')))->setTimezone(new DateTimeZone('UTC'));
+    foreach (['facility', 'asset'] as $kind) {
+        $table = $kind . '_bookings';
+        $start_column = $kind === 'facility' ? 'start_datetime' : 'usage_start';
+        $end_column = $kind === 'facility' ? 'end_datetime' : 'expected_return';
+        $extra = $kind === 'facility' ? "activity_name, participants_count" : 'quantity_requested';
+        $extra_values = $kind === 'facility' ? "'Expiry test', 1" : '1';
+        $resource = $kind === 'facility' ? $facility_ids['primary'] : $asset_ids['quantity'];
+        $fixtures = [];
+        foreach (['old' => ['-1 second', 'PENDING'], 'today' => ['+0 seconds', 'PENDING'], 'approved' => ['-1 day', 'APPROVED']] as $name => [$offset, $status]) {
+            $at = $midnight->modify($offset);
+            query($db, "INSERT INTO {$table} (booking_reference, requester_id, department_id, {$kind}_id, {$start_column}, {$end_column}, purpose, status, {$extra}) VALUES (?, ?, ?, ?, ?, ?, 'Expiry test', ?, {$extra_values})",
+                ['EXP-' . bin2hex(random_bytes(8)), $user_ids['a'], $department, $resource, $at->format('Y-m-d H:i:s'), $at->modify('+2 hours')->format('Y-m-d H:i:s'), $status]);
+            $fixtures[$name] = (int) $db->lastInsertId();
+        }
+        foreach ([1, 2] as $attempt) {
+            $expired = expect_status(request_api('GET', '/api/' . $kind . '-bookings/' . $fixtures['old'], null, $tokens['a']), 200, 'expired request visible')['data'];
+            check($expired['status'] === 'REJECTED' && $expired['rejection_source'] === 'automatic' && $expired['rejected_at'] !== null, 'past campus date automatically rejected');
+        }
+        check(query($db, "SELECT status FROM {$table} WHERE id = ?", [$fixtures['today']])->fetchColumn() === 'PENDING', 'campus midnight belongs to today and stays pending');
+        check(query($db, "SELECT status FROM {$table} WHERE id = ?", [$fixtures['approved']])->fetchColumn() === 'APPROVED', 'past approved booking unchanged');
+        check((int) query($db, 'SELECT COUNT(*) FROM notifications WHERE related_entity_type = ? AND related_entity_id = ?', [$kind . '_booking', $fixtures['old']])->fetchColumn() === 1, 'expiry notifies once');
+        check((int) query($db, 'SELECT COUNT(*) FROM audit_logs WHERE entity_type = ? AND entity_id = ? AND actor_user_id IS NULL', [$kind . '_booking', $fixtures['old']])->fetchColumn() === 1, 'expiry audits once without human actor');
+    }
     $f1 = expect_status(request_api('POST', '/api/facility-bookings', $facility, $tokens['a']), 201, 'first facility pending')['data'];
     $f2 = expect_status(request_api('POST', '/api/facility-bookings', $facility, $tokens['b']), 201, 'overlapping facility pending')['data'];
     check($f1['status'] === 'PENDING' && $f2['status'] === 'PENDING', 'pending requests coexist');

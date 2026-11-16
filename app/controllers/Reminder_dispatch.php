@@ -15,8 +15,11 @@ class Reminder_dispatch extends Controller {
         $recipient = getenv('CFABS_REMINDER_RECIPIENT');
         $recipient = $recipient === FALSE || $recipient === '' ? null : filter_var($recipient, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
         if ($recipient === FALSE) { fwrite(STDERR, "Invalid recipient.\n"); exit(1); }
-        $this->call->library('reminder_service');
-        try { echo json_encode($this->reminder_service->dispatch(getenv('CFABS_REMINDER_SEND') === '1', $hours, $recipient), JSON_THROW_ON_ERROR) . PHP_EOL; }
+        $this->call->library(['reminder_service', 'booking_service']);
+        try {
+            $this->booking_service->reject_past_pending();
+            echo json_encode($this->reminder_service->dispatch(getenv('CFABS_REMINDER_SEND') === '1', $hours, $recipient), JSON_THROW_ON_ERROR) . PHP_EOL;
+        }
         catch (Throwable $error) { fwrite(STDERR, $error->getMessage() . PHP_EOL); exit(1); }
     }
 }

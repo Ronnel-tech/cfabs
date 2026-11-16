@@ -107,6 +107,30 @@ class Booking_service {
         });
     }
 
+    public function reject_past_pending(): array
+    {
+        // Stored booking times are UTC; expiry follows the campus calendar date.
+        $cutoff = (new DateTimeImmutable('today', new DateTimeZone('Asia/Manila')))
+            ->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+        $counts = ['facility' => 0, 'asset' => 0];
+        foreach (array_keys($counts) as $kind) {
+            foreach ($this->lava->Booking_model->past_pending($kind, $cutoff) as $id) {
+                $result = $this->atomic(function () use ($kind, $id, $cutoff) {
+                    [$s, , $booking] = $this->locked_booking($kind, (int) $id);
+                    // Recheck after locking: another worker or reviewer may have acted.
+                    if ($booking['status'] !== 'PENDING' || $booking[$s['start']] >= $cutoff) return [];
+                    $reason = 'Automatically rejected: the scheduled start date has passed without approval (Asia/Manila).';
+                    $this->lava->Booking_model->reject($kind, (int) $id, $reason, 'automatic');
+                    $this->lava->Booking_model->notify($kind, $booking, 'rejected', $booking['booking_reference'] . ': ' . $reason);
+                    $this->lava->Booking_model->audit($kind, (int) $id, null, 'automatically_rejected', ['reason' => $reason]);
+                    return [TRUE];
+                });
+                $counts[$kind] += count($result);
+            }
+        }
+        return $counts;
+    }
+
     public function approve(string $kind, int $id, array $actor): array
     {
         return $this->atomic(function () use ($kind, $id, $actor) {

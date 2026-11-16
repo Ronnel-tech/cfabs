@@ -190,6 +190,16 @@ current API alone does not push real-time updates to a browser.
 
 ### Booking checks
 
+Pending facility and asset requests are automatically rejected when their scheduled
+start date is before today in Asia/Manila. Today's requests remain pending, even
+when their start time has passed; approval still requires a future start time.
+The check runs after successful authenticated API access and in both the existing
+CLI reminder worker and token-protected scheduled mail worker. With no traffic,
+the configured worker schedule determines when rejection is recorded. Each
+rejection records an automatic source, a reason, a system audit entry, and one
+requester notification. Resource/booking locks and a status recheck prevent
+duplicate notifications or overwriting a concurrent decision.
+
 Run `php tests/booking_rules_test.php` for date/input validation. For end-to-end
 booking checks, run two independent PHP server processes on ports 3012 and 3013:
 
